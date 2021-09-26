@@ -1,13 +1,12 @@
 import { useIdeContext } from 'src/helpers/hooks/useIdeContext'
 import * as THREE from 'three'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, Suspense } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import {
   PerspectiveCamera,
   GizmoHelper,
   GizmoViewport,
   OrbitControls,
-  Environment,
   useTexture,
 } from '@react-three/drei'
 import { useEdgeSplit } from 'src/helpers/hooks/useEdgeSplit'
@@ -16,6 +15,9 @@ import { requestRender } from 'src/helpers/hooks/useIdeState'
 import texture from './dullFrontLitMetal.png'
 import Customizer from 'src/components/Customizer/Customizer'
 import DelayedPingAnimation from 'src/components/DelayedPingAnimation/DelayedPingAnimation'
+import type {
+  ArtifactTypes,
+} from 'src/helpers/cadPackages/common'
 
 const thresholdAngle = 12
 
@@ -35,13 +37,13 @@ function Asset({ geometry: incomingGeo }) {
     <group dispose={null}>
       <mesh ref={mesh} scale={[1, 1, 1]} geometry={incomingGeo}>
         <meshPhysicalMaterial
-          envMapIntensity={2}
+          envMapIntensity={0.1}
           color="#F472B6"
           map={colorMap}
           clearcoat={0.1}
           clearcoatRoughness={0.2}
           roughness={10}
-          metalness={0.9}
+          metalness={0.7}
           smoothShading
         />
       </mesh>
@@ -148,23 +150,32 @@ function Sphere(props) {
   )
 }
 
-const IdeViewer = ({ Loading }) => {
-  const { state, thunkDispatch } = useIdeContext()
+export function PureIdeViewer({
+  dataType,
+  artifact,
+  onInit,
+  onCameraChange,
+  isLoading,
+  isMinimal = false
+}: {
+  dataType: "INIT" | ArtifactTypes
+  artifact: any
+  isLoading: boolean
+  onInit: Function
+  onCameraChange: Function
+  isMinimal?: boolean
+}) {
   const [isDragging, setIsDragging] = useState(false)
   const [image, setImage] = useState()
 
-  const onInit = (threeInstance) => {
-    thunkDispatch({ type: 'setThreeInstance', payload: threeInstance })
-  }
-
   useEffect(() => {
-    setImage(state.objectData?.type === 'png' && state.objectData?.data)
+    setImage(dataType === 'png' && artifact)
     setIsDragging(false)
-  }, [state.objectData?.type, state.objectData?.data])
+  }, [dataType, artifact])
   const PrimitiveArray = React.useMemo(
     () =>
-      state.objectData?.type === 'primitive-array' && state.objectData?.data,
-    [state.objectData?.type, state.objectData?.data]
+    dataType === 'primitive-array' && artifact?.map((mesh) => mesh.clone()),
+    [dataType, artifact]
   )
 
   // the following are tailwind colors in hex, can't use these classes to color three.js meshes.
@@ -172,9 +183,9 @@ const IdeViewer = ({ Loading }) => {
   const indigo300 = '#A5B4FC'
   const indigo900 = '#312E81'
   const jscadLightIntensity =
-    state.objectData?.type === 'geometry' &&
-    state.objectData?.data &&
-    state.objectData?.data.length
+    dataType === 'geometry' &&
+    artifact &&
+    artifact.length
       ? 0.5
       : 1.2
   return (
@@ -195,7 +206,7 @@ const IdeViewer = ({ Loading }) => {
       )}
       <div // eslint-disable-line jsx-a11y/no-static-element-interactions
         className={`opacity-0 absolute inset-0 transition-opacity duration-500 ${
-          !(isDragging || state.objectData?.type !== 'png')
+          !(isDragging || dataType !== 'png')
             ? 'hover:opacity-50'
             : 'opacity-100'
         }`}
@@ -205,26 +216,7 @@ const IdeViewer = ({ Loading }) => {
           <Controls
             onDragStart={() => setIsDragging(true)}
             onInit={onInit}
-            onCameraChange={(camera) => {
-              thunkDispatch({
-                type: 'updateCamera',
-                payload: { camera },
-              })
-              thunkDispatch((dispatch, getState) => {
-                const state = getState()
-                if (['png', 'INIT'].includes(state.objectData?.type)) {
-                  dispatch({ type: 'setLoading' })
-                  requestRender({
-                    state,
-                    dispatch,
-                    code: state.code,
-                    viewerSize: state.viewerSize,
-                    camera,
-                    parameters: state.currentParameters,
-                  })
-                }
-              })
-            }}
+            onCameraChange={onCameraChange}
           />
           <PerspectiveCamera makeDefault up={[0, 0, 1]}>
             <pointLight
@@ -232,17 +224,16 @@ const IdeViewer = ({ Loading }) => {
               intensity={jscadLightIntensity}
             />
           </PerspectiveCamera>
-          <ambientLight intensity={0.3} />
-          <Environment preset="warehouse" />
+          <ambientLight intensity={2} />
           <pointLight
             position={[-1000, -1000, -1000]}
             color="#5555FF"
-            intensity={0.5}
+            intensity={1}
           />
           <pointLight
             position={[-1000, 0, 1000]}
             color="#5555FF"
-            intensity={0.5}
+            intensity={1}
           />
           <gridHelper
             args={[200, 20, 0xff5555, 0x555555]}
@@ -250,13 +241,13 @@ const IdeViewer = ({ Loading }) => {
             material-transparent
             rotation-x={Math.PI / 2}
           />
-          <GizmoHelper alignment={'top-left'} margin={[80, 80]}>
+          {!isMinimal && <GizmoHelper alignment={'top-left'} margin={[80, 80]}>
             <GizmoViewport
               axisColors={['red', 'green', 'blue']}
               labelColor="black"
             />
-          </GizmoHelper>
-          {state.objectData?.type === 'png' && (
+          </GizmoHelper>}
+          {dataType === 'png' && (
             <>
               <Sphere position={[0, 0, 0]} color={pink400} />
               <Box position={[0, 50, 0]} size={[1, 100, 1]} color={indigo900} />
@@ -264,8 +255,10 @@ const IdeViewer = ({ Loading }) => {
               <Box position={[50, 0, 0]} size={[100, 1, 1]} color={pink400} />
             </>
           )}
-          {state.objectData?.type === 'geometry' && state.objectData?.data && (
-            <Asset geometry={state.objectData?.data} />
+          {dataType === 'geometry' && artifact && (
+            <Suspense fallback={null}>
+              <Asset geometry={artifact} />
+            </Suspense>
           )}
           {PrimitiveArray &&
             PrimitiveArray.map((mesh, index) => (
@@ -273,10 +266,52 @@ const IdeViewer = ({ Loading }) => {
             ))}
         </Canvas>
       </div>
-      <DelayedPingAnimation isLoading={state.isLoading} />
-      <Customizer />
+      <DelayedPingAnimation isLoading={isLoading} />
+      {!isMinimal && <Customizer />}
     </div>
   )
+}
+
+const IdeViewer = ({handleOwnCamera = false}: {handleOwnCamera?: boolean}) => {
+  const { state, thunkDispatch } = useIdeContext()
+  const dataType = state.objectData?.type
+  const artifact = state.objectData?.data
+
+  const onInit = (threeInstance) => {
+    thunkDispatch({ type: 'setThreeInstance', payload: threeInstance })
+  }
+  const onCameraChange= (camera) => {
+    if(handleOwnCamera) {
+      console.log('yo')
+      return
+    }
+    thunkDispatch({
+      type: 'updateCamera',
+      payload: { camera },
+    })
+    thunkDispatch((dispatch, getState) => {
+      const state = getState()
+      if (['png', 'INIT'].includes(state?.objectData?.type)) {
+        dispatch({ type: 'setLoading' })
+        requestRender({
+          state,
+          dispatch,
+          camera,
+        })
+      }
+    })
+  }
+
+  return (
+    <PureIdeViewer
+        dataType={dataType}
+        artifact={artifact}
+        onInit={onInit}
+        onCameraChange={onCameraChange}
+        isLoading={state.isLoading}
+      />
+  )
+
 }
 
 export default IdeViewer

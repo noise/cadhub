@@ -8,7 +8,7 @@ import PanelToolbar from 'src/components/PanelToolbar/PanelToolbar'
 import { use3dViewerResize } from 'src/helpers/hooks/use3dViewerResize'
 
 const IdeEditor = lazy(() => import('src/components/IdeEditor/IdeEditor'))
-const IdeViewer = lazy(() => import('src/components/IdeViewer/IdeViewer'))
+import IdeViewer from 'src/components/IdeViewer/IdeViewer'
 
 const SmallLoadingPing = (
   <div className="bg-ch-gray-800 text-gray-200 font-ropa-sans relative w-full h-full flex justify-center items-center">
@@ -23,7 +23,7 @@ const SmallLoadingPing = (
 
 export const BigLoadingPing = (
   <div className="inset-0 absolute flex items-center justify-center bg-ch-gray-800 pointer-events-none">
-    <div className="h-16 w-16 bg-pink-600 rounded-full animate-ping"></div>
+    <div className="h-16 w-16 bg-blue-600 rounded-full animate-ping"></div>
   </div>
 )
 
@@ -33,11 +33,7 @@ const ELEMENT_MAP = {
       <IdeEditor Loading={SmallLoadingPing} />
     </Suspense>
   ),
-  Viewer: (
-    <Suspense fallback={BigLoadingPing}>
-      <IdeViewer Loading={BigLoadingPing} />
-    </Suspense>
-  ),
+  Viewer: <IdeViewer />,
   Console: <IdeConsole />,
 }
 

@@ -6,6 +6,9 @@ import Button from 'src/components/Button/Button'
 import { useIdeContext } from 'src/helpers/hooks/useIdeContext'
 import { canvasToBlob, blobTo64 } from 'src/helpers/canvasToBlob'
 import { useUpdateProjectImages } from 'src/helpers/hooks/useUpdateProjectImages'
+import { requestRenderStateless } from 'src/helpers/hooks/useIdeState'
+
+import { PureIdeViewer } from 'src/components/IdeViewer/IdeViewer'
 
 import SocialCardCell from 'src/components/SocialCardCell/SocialCardCell'
 import { toJpeg } from 'html-to-image'
@@ -17,6 +20,41 @@ const anchorOrigin = {
 const transformOrigin = {
   vertical: 'top',
   horizontal: 'center',
+}
+
+const CaptureButtonViewer = () => {
+  const { state } = useIdeContext()
+  const threeInstance = React.useRef(null)
+  const [dataType, dataTypeSetter] = useState(state?.objectData?.type)
+  const [artifact, artifactSetter] = useState(state?.objectData?.data)
+  const [isLoading, isLoadingSetter] = useState(false)
+  const onInit = (_threeInstance) => threeInstance.current = _threeInstance
+  const onCameraChange = (camera) => {
+    const renderPromise = state.ideType === 'openscad' && requestRenderStateless({
+      state,
+      camera,
+      viewerSize: threeInstance.current.size,
+    })
+    if(!renderPromise) {
+      return
+    }
+    isLoadingSetter(true)
+    renderPromise.then(({ objectData }) => {
+      isLoadingSetter(false)
+      dataTypeSetter(objectData?.type)
+      artifactSetter(objectData?.data)
+    })
+  }
+
+
+  return <PureIdeViewer
+      dataType={dataType}
+      artifact={artifact}
+      onInit={onInit}
+      onCameraChange={onCameraChange}
+      isLoading={isLoading}
+      isMinimal
+    />
 }
 
 const CaptureButton = ({
@@ -131,6 +169,9 @@ const CaptureButton = ({
                 'Loading...'
               ) : (
                 <div className="">
+                  <div className="h-32">
+                    <CaptureButtonViewer />
+                  </div>
                   <div className="text-lg">Thumbnail</div>
                   <div
                     className="rounded"
