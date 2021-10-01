@@ -5,7 +5,7 @@ const ProfileViewer = () => {
   const { viewerDomRef } = use3dViewerResize()
   return (
     <div className="h-full" ref={viewerDomRef}>
-        <IdeViewer />
+      <IdeViewer />
     </div>
   )
 }

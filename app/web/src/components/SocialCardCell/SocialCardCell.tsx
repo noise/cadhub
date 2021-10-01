@@ -4,6 +4,7 @@ import Svg from 'src/components/Svg/Svg'
 import { Image as CloudinaryImage } from 'cloudinary-react'
 import Gravatar from 'src/components/Gravatar/Gravatar'
 import CadPackage from 'src/components/CadPackage/CadPackage'
+import { CaptureButtonViewer } from 'src/components/CaptureButton/CaptureButton'
 
 export const QUERY = gql`
   query FindSocialCardQuery($userName: String!, $projectTitle: String) {
@@ -37,7 +38,7 @@ export const Failure = ({ error }: CellFailureProps) => (
 
 export const Success = ({
   userProject,
-  variables: { image64 },
+  variables: { image64, isLiveCard },
 }: CellSuccessProps<FindSocialCardQuery>) => {
   const image = userProject?.Project?.mainImage
   const gravatar = userProject?.image
@@ -45,9 +46,20 @@ export const Success = ({
     userProject?.Project?.description?.length > 150
       ? (userProject?.Project?.description || '').slice(0, 145) + ' . . .'
       : userProject?.Project?.description || ''
+  React.useEffect(() => {
+    const canvas = document.querySelector(
+      '#social-card-canvas canvas'
+    ) as HTMLCanvasElement
+    if (canvas) {
+      setTimeout(() => {
+        canvas.style.height = '100%'
+        canvas.style.width = '100%'
+      }, 200)
+    }
+  })
   return (
     <div
-      className="grid h-screen bg-ch-gray-800 text-ch-gray-300"
+      className="grid h-full bg-ch-gray-800 text-ch-gray-300"
       id="social-card-loaded"
       style={{ gridTemplateRows: ' 555fr 18fr' }}
     >
@@ -82,18 +94,24 @@ export const Success = ({
         </div>
         <div className="h-full overflow-hidden relative">
           <div className="absolute inset-0 flex items-center justify-center">
-            {image64 ? (
-              <div
-                style={{ backgroundImage: `url(${image64})` }}
-                className="w-full h-full bg-no-repeat bg-center"
-              />
-            ) : (
-              <div
-                style={{
-                  backgroundImage: `url(http://res.cloudinary.com/irevdev/image/upload/c_crop,h_522,w_500/v1/${image})`,
-                }}
-                className="w-full h-full bg-no-repeat bg-center bg-blend-difference bg-contain bg-ch-gray-800"
-              />
+            {!isLiveCard &&
+              (image64 ? (
+                <div
+                  style={{ backgroundImage: `url(${image64})` }}
+                  className="w-full h-full bg-no-repeat bg-center"
+                />
+              ) : (
+                <div
+                  style={{
+                    backgroundImage: `url(http://res.cloudinary.com/irevdev/image/upload/c_crop,h_522,w_500/v1/${image})`,
+                  }}
+                  className="w-full h-full bg-no-repeat bg-center bg-blend-difference bg-contain bg-ch-gray-800"
+                />
+              ))}
+            {isLiveCard && (
+              <div className=" w-full h-full" id="social-card-canvas">
+                <CaptureButtonViewer />
+              </div>
             )}
           </div>
         </div>

@@ -15,9 +15,7 @@ import { requestRender } from 'src/helpers/hooks/useIdeState'
 import texture from './dullFrontLitMetal.png'
 import Customizer from 'src/components/Customizer/Customizer'
 import DelayedPingAnimation from 'src/components/DelayedPingAnimation/DelayedPingAnimation'
-import type {
-  ArtifactTypes,
-} from 'src/helpers/cadPackages/common'
+import type { ArtifactTypes } from 'src/helpers/cadPackages/common'
 
 const thresholdAngle = 12
 
@@ -156,9 +154,9 @@ export function PureIdeViewer({
   onInit,
   onCameraChange,
   isLoading,
-  isMinimal = false
+  isMinimal = false,
 }: {
-  dataType: "INIT" | ArtifactTypes
+  dataType: 'INIT' | ArtifactTypes
   artifact: any
   isLoading: boolean
   onInit: Function
@@ -174,7 +172,7 @@ export function PureIdeViewer({
   }, [dataType, artifact])
   const PrimitiveArray = React.useMemo(
     () =>
-    dataType === 'primitive-array' && artifact?.map((mesh) => mesh.clone()),
+      dataType === 'primitive-array' && artifact?.map((mesh) => mesh.clone()),
     [dataType, artifact]
   )
 
@@ -183,11 +181,7 @@ export function PureIdeViewer({
   const indigo300 = '#A5B4FC'
   const indigo900 = '#312E81'
   const jscadLightIntensity =
-    dataType === 'geometry' &&
-    artifact &&
-    artifact.length
-      ? 0.5
-      : 1.2
+    dataType === 'geometry' && artifact && artifact.length ? 0.5 : 1.2
   return (
     <div className="relative h-full bg-ch-gray-800">
       {image && (
@@ -241,12 +235,14 @@ export function PureIdeViewer({
             material-transparent
             rotation-x={Math.PI / 2}
           />
-          {!isMinimal && <GizmoHelper alignment={'top-left'} margin={[80, 80]}>
-            <GizmoViewport
-              axisColors={['red', 'green', 'blue']}
-              labelColor="black"
-            />
-          </GizmoHelper>}
+          {!isMinimal && (
+            <GizmoHelper alignment={'top-left'} margin={[80, 80]}>
+              <GizmoViewport
+                axisColors={['red', 'green', 'blue']}
+                labelColor="black"
+              />
+            </GizmoHelper>
+          )}
           {dataType === 'png' && (
             <>
               <Sphere position={[0, 0, 0]} color={pink400} />
@@ -272,7 +268,11 @@ export function PureIdeViewer({
   )
 }
 
-const IdeViewer = ({handleOwnCamera = false}: {handleOwnCamera?: boolean}) => {
+const IdeViewer = ({
+  handleOwnCamera = false,
+}: {
+  handleOwnCamera?: boolean
+}) => {
   const { state, thunkDispatch } = useIdeContext()
   const dataType = state.objectData?.type
   const artifact = state.objectData?.data
@@ -280,8 +280,8 @@ const IdeViewer = ({handleOwnCamera = false}: {handleOwnCamera?: boolean}) => {
   const onInit = (threeInstance) => {
     thunkDispatch({ type: 'setThreeInstance', payload: threeInstance })
   }
-  const onCameraChange= (camera) => {
-    if(handleOwnCamera) {
+  const onCameraChange = (camera) => {
+    if (handleOwnCamera) {
       console.log('yo')
       return
     }
@@ -304,14 +304,13 @@ const IdeViewer = ({handleOwnCamera = false}: {handleOwnCamera?: boolean}) => {
 
   return (
     <PureIdeViewer
-        dataType={dataType}
-        artifact={artifact}
-        onInit={onInit}
-        onCameraChange={onCameraChange}
-        isLoading={state.isLoading}
-      />
+      dataType={dataType}
+      artifact={artifact}
+      onInit={onInit}
+      onCameraChange={onCameraChange}
+      isLoading={state.isLoading}
+    />
   )
-
 }
 
 export default IdeViewer

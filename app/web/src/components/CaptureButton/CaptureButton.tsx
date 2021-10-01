@@ -22,20 +22,22 @@ const transformOrigin = {
   horizontal: 'center',
 }
 
-const CaptureButtonViewer = () => {
+export const CaptureButtonViewer = () => {
   const { state } = useIdeContext()
   const threeInstance = React.useRef(null)
   const [dataType, dataTypeSetter] = useState(state?.objectData?.type)
   const [artifact, artifactSetter] = useState(state?.objectData?.data)
   const [isLoading, isLoadingSetter] = useState(false)
-  const onInit = (_threeInstance) => threeInstance.current = _threeInstance
+  const onInit = (_threeInstance) => (threeInstance.current = _threeInstance)
   const onCameraChange = (camera) => {
-    const renderPromise = state.ideType === 'openscad' && requestRenderStateless({
-      state,
-      camera,
-      viewerSize: threeInstance.current.size,
-    })
-    if(!renderPromise) {
+    const renderPromise =
+      state.ideType === 'openscad' &&
+      requestRenderStateless({
+        state,
+        camera,
+        viewerSize: threeInstance.current.size,
+      })
+    if (!renderPromise) {
       return
     }
     isLoadingSetter(true)
@@ -46,8 +48,8 @@ const CaptureButtonViewer = () => {
     })
   }
 
-
-  return <PureIdeViewer
+  return (
+    <PureIdeViewer
       dataType={dataType}
       artifact={artifact}
       onInit={onInit}
@@ -55,6 +57,7 @@ const CaptureButtonViewer = () => {
       isLoading={isLoading}
       isMinimal
     />
+  )
 }
 
 const CaptureButton = ({
